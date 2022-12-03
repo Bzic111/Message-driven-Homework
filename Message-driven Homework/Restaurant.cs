@@ -1,18 +1,28 @@
-﻿public class Restaurant
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+public class Restaurant
 {
-    private readonly List<Table> _tables = new List<Table>();
+    private readonly object _lock = new object();
+    public List<Table> _tables { get; private set; }
     public Restaurant()
     {
+        _tables = new();
         for (ushort i = 0; i < 10; i++)
-        {
             _tables.Add(new Table(i));
+    }
+    public void BookTable(int id)
+    {
+        var temp = GetTable(id);
+        lock (_lock)
+        {
+            temp!.SetState(State.Booked);
         }
     }
     public void BookFreeTable(int personsCount)
     {
-        Console.WriteLine("Cheking tables");
+        TheOperator.Send("Cheking tables");
         var table = _tables.FirstOrDefault(t => t.SeatsCount >= personsCount && t.CurrentState is State.Free);
-        Thread.Sleep(1000 * 2);
+        Thread.Sleep(1000 * new Random().Next(1, 5));
         string result;
         if (table is null)
         {
@@ -23,26 +33,51 @@
             table.SetState(State.Booked);
             result = $"Yours table {table.Id}";
         }
-        Console.WriteLine(result);
+        TheOperator.Send(result);
     }
-    public void BookFreeTableAsync(int personsCount)
+    public async void BookFreeTableAsync(int personsCount)
     {
-        Console.WriteLine("Cheking tables");
-        Task.Run(async () =>
+        TheOperator.Send("Cheking tables");
+        await Task.Run(() =>
         {
-            var table = _tables.FirstOrDefault(t => t.SeatsCount >= personsCount && t.CurrentState is State.Free);
-            await Task.Delay(1000 * 2);
-            string result;
-            if (table is null)
+            lock (_lock)
             {
-                result = $"No tables";
+                var table = _tables.FirstOrDefault(t => t.SeatsCount >= personsCount & t.CurrentState == State.Free);
+                Thread.Sleep(1000 * new Random().Next(1, 5));
+                string result;
+                if (table is null)
+                {
+                    result = $"No tables";
+                }
+                else
+                {
+                    table.SetState(State.Booked);
+                    result = $"Yours table {table.Id}";
+                }
+                TheOperator.Send(result);
             }
-            else
+        });
+    }
+    private Table? GetTable(int id) => _tables.FirstOrDefault(t => t.Id == id);
+    private async Task<Table?> GetTableAsync(int id) => await new Task<Table?>(() => { return _tables.FirstOrDefault(t => t.Id == id); });
+    public void UnbookTable(int tableNum)
+    {
+        var temp = GetTable(tableNum);
+        if (temp is not null && temp.CurrentState == State.Booked)
+            temp.SetState(State.Free);
+    }
+    public async void UnbookTableAsync(int tableNum)
+    {
+        await Task.Run(async () =>
+        {
+            var temp = await GetTableAsync(tableNum);
+            if (temp is not null && temp.CurrentState == State.Booked)
             {
-                table.SetState(State.Booked);
-                result = $"Yours table {table.Id}";
+                lock (_lock)
+                {
+                    temp.SetState(State.Free);
+                }
             }
-            Console.WriteLine(result);
         });
     }
 }
