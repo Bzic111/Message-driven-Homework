@@ -13,7 +13,7 @@ public class Consumer:IDisposable
         _queueName = queueName;
         var factory = new ConnectionFactory() { HostName = _hostName };
 		_connection = factory.CreateConnection();
-        _channel=_connection.CreateModel();
+		_channel = _connection.CreateModel();
 	}
 	public void Receive(EventHandler<BasicDeliverEventArgs> receiveCallback)
 	{

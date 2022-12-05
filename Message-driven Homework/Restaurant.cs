@@ -3,6 +3,7 @@
 public class Restaurant
 {
     private readonly Producer _producer = new Producer("BookingNotification", "localhost");
+    private readonly Consumer _consumer = new Consumer("Messages", "localhost");
     private readonly object _lock = new object();
     public List<Table> _tables { get; private set; }
     public Restaurant()
