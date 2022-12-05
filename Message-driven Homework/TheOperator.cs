@@ -5,6 +5,7 @@ public static class TheOperator
 {
     private static string _welcome = "Welcome to our restaurant\n\tNum\tSeats\tStatus";
     private static int rowForMessages;
+
     public static void Send(string str)
     {
         Console.ResetColor();

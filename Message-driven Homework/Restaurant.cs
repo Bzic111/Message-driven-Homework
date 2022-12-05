@@ -2,6 +2,7 @@
 
 public class Restaurant
 {
+    private readonly Producer _producer = new Producer("BookingNotification", "localhost");
     private readonly object _lock = new object();
     public List<Table> _tables { get; private set; }
     public Restaurant()
@@ -20,7 +21,7 @@ public class Restaurant
     }
     public void BookFreeTable(int personsCount)
     {
-        TheOperator.Send("Cheking tables");
+        _producer.Send("Cheking tables"); //TheOperator
         var table = _tables.FirstOrDefault(t => t.SeatsCount >= personsCount && t.CurrentState is State.Free);
         Thread.Sleep(1000 * new Random().Next(1, 5));
         string result;
@@ -33,11 +34,12 @@ public class Restaurant
             table.SetState(State.Booked);
             result = $"Yours table {table.Id}";
         }
-        TheOperator.Send(result);
+        //TheOperator.Send(result);
+        _producer.Send(result);
     }
     public async void BookFreeTableAsync(int personsCount)
     {
-        TheOperator.Send("Cheking tables");
+        _producer.Send("Cheking tables"); //TheOperator
         await Task.Run(() =>
         {
             lock (_lock)
@@ -54,7 +56,8 @@ public class Restaurant
                     table.SetState(State.Booked);
                     result = $"Yours table {table.Id}";
                 }
-                TheOperator.Send(result);
+                //TheOperator.Send(result);
+                _producer.Send(result);
             }
         });
     }
