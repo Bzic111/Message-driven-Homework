@@ -1,0 +1,21 @@
+﻿public enum Position
+{
+    BeforeKeyPosition,
+    AfterKeyPosition,
+    AfterSwitchPosition,
+    UpCase,
+    DownCase,
+    LeftCase,
+    RightCase,
+    EnterCase,
+    EscapeCase,
+    BackspaceCase,
+    PgUpCase,
+    PgDownCase,
+    HomeCase,
+    EndCase,
+    DefaultCase,
+    NullCase,
+    StartCycle,
+    AfterCycle
+}

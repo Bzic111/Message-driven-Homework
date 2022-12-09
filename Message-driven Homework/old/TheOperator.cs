@@ -25,7 +25,7 @@ public static class TheOperator
         Console.WriteLine(_welcome + "\n");
     }
     public static void ChangeWelcomeMessage(string str) => _welcome = str;
-    
+
     public static void Send(string str, ConsoleColor bgColor, ConsoleColor fgColor)
     {
         int tempRow = Console.CursorTop;

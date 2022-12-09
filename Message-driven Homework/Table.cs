@@ -10,7 +10,7 @@ public class Table
     {
         Id = id;
         CurrentState = State.Free;
-        SeatsCount = new Random().Next(2, 5);
+        SeatsCount = new Random().Next(2, 10);
     }
     public bool SetState(State st)
     {

@@ -1,133 +1,146 @@
-﻿
-using System.Diagnostics;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Timers;
+﻿using Message_driven_Homework;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-int row, col, top, left;
+var host = CreateHostBuilder(args);
+
+IHostBuilder CreateHostBuilder(string[] args)
+{
+    var host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, services) =>
+    {
+        services.AddHostedService<Listener>();
+    });
+    return host;
+}
+
+var app = host.Build();
 var rest = new Restaurant();
-var stopWatch = new Stopwatch();
-var cntr = (Controls)0b1011;
-row = col = top = left = 0;
-bool cycle = true;
-System.Timers.Timer timer = new(1000);
 
-List<string> menu = new List<string>();
+Listener.SetAction(() => rest.BookFreeTableAsync(new Random().Next(1, 5)));
+Listener.SetBookingAction((seats) => rest.BookFreeTable(seats));
 
+app.Run();
 
-foreach (var item in rest._tables)
-{
-    menu.Add($"Table\t{item.Id}\t{item.SeatsCount}\t{item.CurrentState}");
-}
+#region Legacy
 
-menu.Add($"Booking random table");
-menu.Add($"Exit");
+//List<string> menu = new List<string>();
+//int row, col, top, left;
+//var stopWatch = new Stopwatch();
+//var cntr = (Controls)0b1011;
+//row = col = top = left = 0;
+//bool cycle = true;
+//System.Timers.Timer timer = new(1000);
 
-TheOperator.SetRow(menu.Count + 5);
+//foreach (var item in rest._tables)
+//{
+//    menu.Add($"Table\t{item.Id}\t{item.SeatsCount}\t{item.CurrentState}");
+//}
 
-var vActs = new VoidActions(Position.EscapeCase, () =>
-{
-    cycle = false;
-    EndProgram();
-    //Thread.CurrentThread.Abort();
-});
+//menu.Add($"Booking random table");
+//menu.Add($"Exit");
 
-vActs.AddAction(Position.UpCase, () =>
-{
-    if (row > 0)
-    {
-        row--;
-        top--;
-    }
-});
+//TheOperator.SetRow(menu.Count + 5);
 
-vActs.AddAction(Position.DownCase, () =>
-{
-    if (row < menu.Count - 1)
-    {
-        row++; top++;
-    }
-});
+//var vActs = new VoidActions(Position.EscapeCase, () =>
+//{
+//    cycle = false;
+//    EndProgram();
+//    //Thread.CurrentThread.Abort();
+//});
 
-vActs.AddAction(Position.EnterCase, () =>
-{
-    if (row < rest._tables.Count)
-    {
-        rest.BookTable(row);
-    }
-    else if (row == menu.Count - 1)
-    {
-        cycle = false;
-    }
-    else
-    {
-        rest.BookFreeTableAsync(new Random().Next(1, 5));
-    }
-});
+//vActs.AddAction(Position.UpCase, () =>
+//{
+//    if (row > 0)
+//    {
+//        row--;
+//        top--;
+//    }
+//});
 
-vActs.AddAction(Position.BackspaceCase, () =>
-{
-    rest.UnbookTable(row);
-});
+//vActs.AddAction(Position.DownCase, () =>
+//{
+//    if (row < menu.Count - 1)
+//    {
+//        row++; top++;
+//    }
+//});
 
-vActs.AddAction(Position.StartCycle, () =>
-{
-    TheOperator.WelcomeMessage();
-    top = Console.CursorTop;
-    left = 0;
-    foreach (var item in menu)
-        Console.WriteLine(item);
-    Console.SetCursorPosition(left, top);
+//vActs.AddAction(Position.EnterCase, () =>
+//{
+//    if (row < rest._tables.Count)
+//    {
+//        rest.BookTable(row);
+//    }
+//    else if (row == menu.Count - 1)
+//    {
+//        cycle = false;
+//    }
+//    else
+//    {
+//        rest.BookFreeTableAsync(new Random().Next(1, 5));
+//    }
+//});
 
-});
+//vActs.AddAction(Position.BackspaceCase, () =>
+//{
+//    rest.UnbookTable(row);
+//});
 
-vActs.AddAction(Position.AfterKeyPosition, () =>
-{
-    Console.ResetColor();
-    Console.Write(menu[row]);
-    Console.CursorLeft = left;
-});
+//vActs.AddAction(Position.StartCycle, () =>
+//{
+//    TheOperator.WelcomeMessage();
+//    top = Console.CursorTop;
+//    left = 0;
+//    foreach (var item in menu)
+//        Console.WriteLine(item);
+//    Console.SetCursorPosition(left, top);
 
-vActs.AddAction(Position.BeforeKeyPosition, () =>
-{
-    Console.BackgroundColor = ConsoleColor.White;
-    Console.ForegroundColor = ConsoleColor.Black;
-    Console.Write(menu[row]);
-    Console.CursorLeft = left;
-    Console.ResetColor();
-});
+//});
 
-vActs.AddAction(Position.AfterSwitchPosition, () =>
-{
-    Console.SetCursorPosition(left, top);
-});
+//vActs.AddAction(Position.AfterKeyPosition, () =>
+//{
+//    Console.ResetColor();
+//    Console.Write(menu[row]);
+//    Console.CursorLeft = left;
+//});
 
-ConsoleSelector.MultiLine(cntr, vActs, ref cycle, true);
+//vActs.AddAction(Position.BeforeKeyPosition, () =>
+//{
+//    Console.BackgroundColor = ConsoleColor.White;
+//    Console.ForegroundColor = ConsoleColor.Black;
+//    Console.Write(menu[row]);
+//    Console.CursorLeft = left;
+//    Console.ResetColor();
+//});
 
+//vActs.AddAction(Position.AfterSwitchPosition, () =>
+//{
+//    Console.SetCursorPosition(left, top);
+//});
 
-void OntTimerAction(Object source, ElapsedEventArgs e)
-{
-
-}
-
-void EndProgram()
-{
-    timer.Stop();
-    timer.Dispose();
-}
-
-void SetTimer()
-{
-    //timer = new(1000);
-    timer.Elapsed += OntTimerAction;
-    timer.AutoReset = true;
-    timer.Enabled = true;
-}
+//ConsoleSelector.MultiLine(cntr, vActs, ref cycle, true);
 
 
-#region Comments
+//void OnTimerAction(Object source, ElapsedEventArgs e)
+//{
+
+//}
+
+//void EndProgram()
+//{
+//    timer.Stop();
+//    timer.Dispose();
+//}
+
+//void SetTimer()
+//{
+//    //timer = new(1000);
+//    timer.Elapsed += OnTimerAction;
+//    timer.AutoReset = true;
+//    timer.Enabled = true;
+//}
 
 
 //System.Timers.Timer aTimer;

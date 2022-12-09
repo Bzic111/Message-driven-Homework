@@ -2,8 +2,7 @@
 
 public class Restaurant
 {
-    private readonly Producer _producer = new Producer("BookingNotification", "localhost");
-    private readonly Consumer _consumer = new Consumer("Messages", "localhost");
+    private readonly Producer _producer;// = new Producer("BookingNotification", "localhost");
     private readonly object _lock = new object();
     public List<Table> _tables { get; private set; }
     public Restaurant()
@@ -11,6 +10,8 @@ public class Restaurant
         _tables = new();
         for (ushort i = 0; i < 10; i++)
             _tables.Add(new Table(i));
+        _producer = new Producer("BookingNotification", "localhost", "", "fanout");
+        _producer.Send("Restaurant is working");
     }
     public void BookTable(int id)
     {
@@ -22,7 +23,7 @@ public class Restaurant
     }
     public void BookFreeTable(int personsCount)
     {
-        _producer.Send("Cheking tables"); //TheOperator
+        _producer.Send("Cheking tables", "BookingNotification", "fanout");
         var table = _tables.FirstOrDefault(t => t.SeatsCount >= personsCount && t.CurrentState is State.Free);
         Thread.Sleep(1000 * new Random().Next(1, 5));
         string result;
@@ -33,14 +34,14 @@ public class Restaurant
         else
         {
             table.SetState(State.Booked);
-            result = $"Yours table {table.Id}";
+            result = $"Table {table.Id} is booked";
         }
-        //TheOperator.Send(result);
-        _producer.Send(result);
+        _producer.Send(result, "BookingNotification", "fanout");
     }
     public async void BookFreeTableAsync(int personsCount)
     {
-        _producer.Send("Cheking tables"); //TheOperator
+        _producer.Send("Cheking tables", "BookingNotification", "fanout");
+        //_producer.Send("Cheking tables");
         await Task.Run(() =>
         {
             lock (_lock)
@@ -55,10 +56,9 @@ public class Restaurant
                 else
                 {
                     table.SetState(State.Booked);
-                    result = $"Yours table {table.Id}";
+                    result = $"Table {table.Id} is booked";
                 }
-                //TheOperator.Send(result);
-                _producer.Send(result);
+                _producer.Send(result, "BookingNotification", "fanout");
             }
         });
     }

@@ -1,30 +1,16 @@
-﻿
-
-
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Text;
 
-Producer producer = new Producer("BookingNotification", "localhost");
-Consumer consumer = new Consumer("Messages", "localhost");
+var host = CreateHostBuilder(args);
 
-class Listner :  BackgroundService
+IHostBuilder CreateHostBuilder(string[] args)
 {
-    private readonly Consumer _consumer;
-    public Listner(Consumer consumer)
+    var host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, services) =>
     {
-        _consumer = _consumer = new(
-                queueName: "Messages",
-                hostName: "localhost");
-    }
-
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        _consumer.Receive((sender, args) =>
-        {
-            var body = args.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
-            Console.WriteLine($"{DateTime.Now.Date} Received {message}");
-        });
-    }
+        services.AddHostedService<Listener>();
+    });
+    return host;
 }
+
+var app = host.Build();
+app.Run();

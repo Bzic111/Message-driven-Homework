@@ -11,18 +11,18 @@ var cycle = true;
 while (cycle)
 {
     var str = Console.ReadLine();
-    prod.Send(str);
+    prod.Send(str!);
     cycle = Console.ReadKey(false).Key != ConsoleKey.Escape;
 
 }
 IHostBuilder CreateHostBuilder(string[] args)
 {
-    var host =  Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, services) =>
+    var host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, services) =>
     {
         //services.AddHostedService<Worker>();
         services.AddHostedService<FanoutWorker>();
     });
-    
+
     return host;
 }
 
@@ -39,11 +39,14 @@ public class Worker : BackgroundService
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _consumer.Receive((sender, args) =>
+        await Task.Run(() =>
         {
-            var body = args.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
-            Console.WriteLine($"{DateTime.Now.Date} Received {message}");
+            _consumer.Receive((sender, args) =>
+            {
+                var body = args.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+                Console.WriteLine($"{DateTime.Now.Date} Received {message}");
+            });
         });
     }
 }
@@ -59,11 +62,14 @@ public class FanoutWorker : BackgroundService
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _consumer.Receive((sender, args) =>
-        {
-            var body = args.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
-            Console.WriteLine($"{DateTime.Now.Date} Received: {message}");
+        await Task.Run(() => 
+        { 
+            _consumer.Receive((sender, args) =>
+            {
+                var body = args.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+                Console.WriteLine($"{DateTime.Now.Date} Received: {message}");
+            });
         });
     }
 }
@@ -92,16 +98,16 @@ public class Consumer : IDisposable
             exclusive: false,
             autoDelete: false,
             arguments: null);
-        
+
         _channel.QueueBind(
             queue: _queueName,
             exchange: "logs",
             routingKey: _queueName);
-        
+
         var consumer = new EventingBasicConsumer(_channel);
-        
+
         consumer.Received += receiveCallback;
-        
+
         _channel.BasicConsume(
             queue: _queueName,
             autoAck: true,

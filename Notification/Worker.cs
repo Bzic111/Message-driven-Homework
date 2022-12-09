@@ -14,15 +14,28 @@ namespace Notification
         {
             _consumer = new(
                 queueName: "BookingNotification",
-                hostName: "localhost");
+                hostName: "localhost",
+                exchange: "ForAll",
+                type: "fanout");
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _consumer.Receive((sender, args) =>
+            await Task.Run(() =>
             {
-                var body = args.Body.ToArray();
-                var message = Encoding.UTF8.GetString(body);
-                Console.WriteLine($"{DateTime.Now.Date} Received {message}");
+                _consumer.Receive(
+                receiveCallback: (sender, args) =>
+                {
+                    var body = args.Body.ToArray();
+                    var message = Encoding.UTF8.GetString(body);
+                    Console.WriteLine($"{DateTime.Now.Date} Received {message}");
+                },
+                exchange: "ForAll",
+                type: "fanout",
+                durable: false,
+                exclusive: false,
+                autoDelete: false,
+                autoAck: true
+            );
             });
         }
     }
